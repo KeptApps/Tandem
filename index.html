@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tandem — live demo</title>
+<style>
+/* ---------- tokens ---------- */
+:root{
+  --paper:#F4F6F5; --card:#FFFFFF; --ink:#1B2420; --soft:#5E6B65; --rule:#DCE3E0;
+  --a:#1F6F63; --b:#7A4E9B; --warn:#C0553F; --ok:#2E7D5B;
+  --r:10px; --pad:20px;
+  --serif:Georgia,'Iowan Old Style','Times New Roman',serif;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+}
+[data-theme="dark"]{
+  --paper:#131A18; --card:#1B2422; --ink:#E8EDEB; --soft:#93A29C; --rule:#2C3936;
+  --a:#4FB39F; --b:#B189CE; --warn:#E08265; --ok:#5BBE8F;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper); color:var(--ink); font-family:var(--sans);
+  font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+h1,h2,h3{font-family:var(--serif); font-weight:normal; margin:0}
+
+/* ---------- shell ---------- */
+#app{display:flex; min-height:100vh}
+.rail{
+  width:212px; flex:0 0 212px; border-right:1px solid var(--rule);
+  padding:22px 14px; position:sticky; top:0; height:100vh; overflow-y:auto;
+}
+.brand{font-family:var(--serif); font-size:21px; letter-spacing:.01em; padding:0 8px 2px}
+.brand b{font-weight:normal}
+.brandsub{font-size:11.5px; color:var(--soft); padding:0 8px 20px}
+.navitem{
+  display:block; width:100%; text-align:left; background:none; border:0;
+  padding:8px 10px; border-radius:8px; color:var(--soft); font-size:14px; margin-bottom:1px;
+}
+.navitem:hover{background:rgba(127,127,127,.09); color:var(--ink)}
+.navitem[aria-current="true"]{background:rgba(127,127,127,.13); color:var(--ink)}
+main{flex:1; min-width:0; padding:26px 30px 90px; max-width:1060px}
+.topline{display:flex; justify-content:space-between; align-items:flex-end; gap:16px; margin-bottom:22px; flex-wrap:wrap}
+.greet{font-size:26px}
+.sub{color:var(--soft); font-size:13.5px; margin-top:3px}
+
+/* ---------- sample banner ---------- */
+.sample{
+  display:flex; gap:12px; align-items:center; justify-content:space-between;
+  background:var(--card); border:1px solid var(--rule); border-left:3px solid var(--b);
+  border-radius:var(--r); padding:11px 14px; margin-bottom:20px; font-size:13.5px;
+}
+
+/* ---------- cards ---------- */
+.card{background:var(--card); border:1px solid var(--rule); border-radius:var(--r); padding:var(--pad)}
+.grid{display:grid; gap:14px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:repeat(3,1fr)}
+.label{font-size:12.5px; color:var(--soft)}
+
+/* the hero: one number, and the two-tone bar that is the product's whole idea */
+.hero{padding:26px var(--pad) 22px}
+.hero .num{font-family:var(--serif); font-size:54px; line-height:1.05; letter-spacing:-.015em}
+.hero .msg{color:var(--soft); font-size:14px; margin-top:8px; max-width:58ch}
+.splitbar{display:flex; height:7px; border-radius:4px; overflow:hidden; margin-top:18px}
+.splitbar i{display:block}
+.splitkey{display:flex; gap:18px; margin-top:9px; font-size:12.5px; color:var(--soft); flex-wrap:wrap}
+.dot{display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; vertical-align:1px}
+
+/* a person's money always carries their colour on the left edge */
+.mine{border-left:3px solid var(--a)}
+.theirs{border-left:3px solid var(--b)}
+.ours{border-left:3px solid transparent; border-image:linear-gradient(var(--a),var(--b)) 1}
+.pnum{font-family:var(--serif); font-size:29px; margin-top:4px}
+
+/* ---------- rows ---------- */
+.row{
+  display:flex; align-items:center; gap:12px; padding:11px 0;
+  border-bottom:1px solid var(--rule); font-size:14px;
+}
+.row:last-child{border-bottom:0}
+.row .gr{flex:1; min-width:0}
+.row .nm{white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.row .meta{font-size:12px; color:var(--soft)}
+.amt{font-family:var(--serif); font-size:17px; white-space:nowrap}
+.tag{font-size:11px; padding:2px 7px; border-radius:20px; border:1px solid var(--rule); color:var(--soft); white-space:nowrap}
+
+/* ---------- controls ---------- */
+.btn{background:var(--ink); color:var(--paper); border:0; border-radius:8px; padding:8px 14px; font-size:13.5px}
+.btn.ghost{background:none; color:var(--ink); border:1px solid var(--rule)}
+.btn.sm{padding:5px 10px; font-size:12.5px}
+input,select{background:var(--card); border:1px solid var(--rule); border-radius:8px; padding:8px 10px; width:100%}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--a); outline-offset:1px}
+.field{margin-bottom:10px}
+.field .label{display:block; margin-bottom:4px}
+.inline{display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end}
+.inline > *{flex:1; min-width:110px}
+.inline .btn{flex:0 0 auto}
+
+/* ---------- misc ---------- */
+.sechead{display:flex; justify-content:space-between; align-items:center; margin:26px 0 11px}
+.sechead h2{font-size:19px}
+.note{font-size:13px; color:var(--soft)}
+.flag{background:rgba(192,85,63,.09); border-left:3px solid var(--warn); padding:10px 13px; border-radius:6px; font-size:13.5px; margin-top:12px}
+.good{background:rgba(46,125,91,.09); border-left:3px solid var(--ok)}
+.bars{display:flex; align-items:flex-end; gap:2px; height:60px; margin-top:10px}
+.bars i{flex:1; background:var(--a); border-radius:1px 1px 0 0; opacity:.75; min-height:1px}
+.bars i.neg{background:var(--warn); opacity:.9}
+.track{height:6px; background:var(--rule); border-radius:4px; overflow:hidden; margin-top:7px}
+.track i{display:block; height:100%}
+.empty{text-align:center; padding:34px 18px; color:var(--soft); font-size:14px}
+.tabbar{display:none}
+.ver{font-size:11px; color:var(--soft); padding:16px 8px 0}
+
+@media (max-width:820px){
+  #app{display:block}
+  .rail{display:none}
+  main{padding:18px 16px 96px; max-width:none}
+  .g2,.g3{grid-template-columns:1fr}
+  .hero .num{font-size:42px}
+  .greet{font-size:21px}
+  .tabbar{
+    display:flex; position:fixed; bottom:0; left:0; right:0; background:var(--card);
+    border-top:1px solid var(--rule); padding:6px 4px; z-index:5; overflow-x:auto;
+  }
+  .tabbar .navitem{text-align:center; font-size:11px; padding:7px 8px; white-space:nowrap; flex:1}
+}
+@media (max-width:560px){
+  .row{flex-wrap:wrap; gap:8px}
+  .row .gr{flex:1 1 100%}
+  .row .amt{order:2}
+  .row .tag{order:1}
+  .row .btn{order:3; margin-left:auto}
+}
+@media print{
+  .rail,.tabbar,.btn,.sample{display:none!important}
+  body{background:#fff}
+  .card{break-inside:avoid; border-color:#ccc}
+}
+@media (prefers-reduced-motion:no-preference){
+  .flash{animation:flash .5s ease}
+  @keyframes flash{from{background:rgba(31,111,99,.22)}to{background:transparent}}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside class="rail">
+    <div class="brand"><b>Tandem</b></div>
+    <div class="brandsub">Two incomes, one clear number</div>
+    <nav id="nav"></nav>
+    <div class="ver">v1.0 · live demo</div>
+  </aside>
+  <main>
+    <div id="banner"></div>
+    <div id="view"></div>
+  </main>
+  <nav class="tabbar" id="tabbar"></nav>
+</div>
+
+<script>
+"use strict";
+
+/* ============ storage ============ */
+var KEY="tandem.v1";
+var SCREENS=[
+  ["today","Today"],["arrive","When money arrives"],["bills","Bills coming up"],
+  ["share","Who pays what"],["spent","Where it went"],["goals","What we're saving for"],
+  ["owe","What we still owe"],["settings","Settings"]
+];
+
+function blank(){
+  return {
+    version:1, sample:false, screen:"today",
+    people:[{id:"a",name:"Maya"},{id:"b",name:"Sam"}],
+    settings:{currency:"$",theme:"light",buffer:250,split:"ratio"},
+    balances:{joint:0,a:0,b:0},
+    allowance:{a:0,b:0},
+    income:[], bills:[], txns:[], goals:[], debts:[]
+  };
+}
+
+function sample(){
+  var s=blank(); s.sample=true;
+  var t=new Date(); var yr=t.getFullYear(), mo=t.getMonth();
+  function d(day){ return iso(new Date(yr,mo,day)); }
+  s.balances={joint:2140,a:610,b:445};
+  s.allowance={a:400,b:400};
+  s.income=[
+    {id:"i1",owner:"a",label:"Clinic salary",amount:1680,cycle:"biweekly",next:d(Math.min(t.getDate()+4,28))},
+    {id:"i2",owner:"b",label:"Agency salary",amount:3250,cycle:"monthly",next:d(28)}
+  ];
+  s.bills=[
+    {id:"b1",name:"Rent",amount:1450,day:1,pot:"joint",split:"ratio",paidBy:""},
+    {id:"b2",name:"Electricity",amount:118,day:8,pot:"joint",split:"ratio",paidBy:""},
+    {id:"b3",name:"Internet",amount:60,day:12,pot:"joint",split:"half",paidBy:""},
+    {id:"b4",name:"Groceries standing order",amount:520,day:3,pot:"joint",split:"ratio",paidBy:""},
+    {id:"b5",name:"Car insurance",amount:96,day:15,pot:"joint",split:"half",paidBy:""},
+    {id:"b6",name:"Maya's phone",amount:29,day:6,pot:"a",split:"one",paidBy:"a"},
+    {id:"b7",name:"Sam's gym",amount:42,day:10,pot:"b",split:"one",paidBy:"b"}
+  ];
+  s.txns=[
+    {id:"t1",date:d(Math.max(1,t.getDate()-1)),amount:64.20,cat:"Groceries",pot:"joint",by:"a"},
+    {id:"t2",date:d(Math.max(1,t.getDate()-2)),amount:18.50,cat:"Coffee",pot:"a",by:"a"},
+    {id:"t3",date:d(Math.max(1,t.getDate()-2)),amount:112.00,cat:"Dog vet",pot:"joint",by:"b"},
+    {id:"t4",date:d(Math.max(1,t.getDate()-4)),amount:35.00,cat:"Books",pot:"b",by:"b"},
+    {id:"t5",date:d(Math.max(1,t.getDate()-5)),amount:88.40,cat:"Groceries",pot:"joint",by:"a"}
+  ];
+  s.goals=[
+    {id:"g1",name:"Emergency fund",target:9000,saved:5400,monthly:300,shared:true,owner:"",date:""},
+    {id:"g2",name:"Trip to Lisbon",target:3200,saved:980,monthly:180,shared:true,owner:"",date:""},
+    {id:"g3",name:"Maya's laptop",target:1400,saved:520,monthly:90,shared:false,owner:"a",date:""}
+  ];
+  s.debts=[
+    {id:"d1",name:"Credit card",balance:3180,apr:22.9,min:140,owner:"joint"},
+    {id:"d2",name:"Sam's student loan",balance:8600,apr:4.9,min:210,owner:"b"}
+  ];
+  return s;
+}
+
+var DEMO=true; var S=sample();
+function load(){
+  try{ var r=localStorage.getItem(KEY); if(r) return Object.assign(blank(),JSON.parse(r)); }catch(e){}
+  return blank();
+}
+function save(){ /* demo build: nothing is written to this device */ }
+
+/* ============ helpers ============ */
+function iso(d){ return d.toISOString().slice(0,10); }
+function period(d){ return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2); }
+function billPaidFor(b,d){ return !!b.paidBy && b.paidPeriod===period(d); }
+function today(){ var t=new Date(); return new Date(t.getFullYear(),t.getMonth(),t.getDate()); }
+function parse(s){ var p=String(s||"").split("-"); return new Date(+p[0],(+p[1]||1)-1,+p[2]||1); }
+function addDays(d,n){ var x=new Date(d); x.setDate(x.getDate()+n); return x; }
+function money(n){
+  var c=S.settings.currency||"$"; var neg=n<0; n=Math.abs(n);
+  return (neg?"-":"")+c+n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function money0(n){
+  var c=S.settings.currency||"$"; var neg=n<0; n=Math.abs(n);
+  return (neg?"-":"")+c+Math.round(n).toLocaleString();
+}
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(m){
+  return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]; }); }
+function uid(){ return Math.random().toString(36).slice(2,9); }
+function person(id){ for(var i=0;i<S.people.length;i++) if(S.people[i].id===id) return S.people[i]; return {id:id,name:id}; }
+function nameOf(id){ return person(id).name || (id==="a"?"Person A":"Person B"); }
+function colourOf(id){ return id==="a"?"var(--a)":id==="b"?"var(--b)":"var(--soft)"; }
+
+/* ---- pay cycles ---- */
+var PER_YEAR={weekly:52,biweekly:26,semimonthly:24,monthly:12};
+function monthlyAmount(s){ return (s.amount*(PER_YEAR[s.cycle]||12))/12; }
+
+/* every payday for one stream between two dates */
+function paydays(stream,from,to){
+  var out=[], d=parse(stream.next), anchor=parse(stream.next).getDate(), a2=+stream.day2||0, guard=0;
+  while(d<from && guard++<400) d=stepPay(d,stream.cycle,anchor,a2);
+  /* the stored date is the NEXT payday, so walk back to reach earlier ones */
+  guard=0;
+  while(d>from && guard++<400){
+    var prev=stepBack(d,stream.cycle,anchor,a2);
+    if(prev<from || !(prev<d)) break;
+    d=prev;
+  }
+  guard=0;
+  while(d<=to && guard++<400){ out.push(new Date(d)); d=stepPay(d,stream.cycle,anchor,a2); }
+  return out;
+}
+function lastDayOf(y,m){ return new Date(y,m+1,0).getDate(); }
+/* the pair of days a semi-monthly wage lands on, derived once from the anchor */
+function semiPair(a,b){
+  a=Math.min(Math.max(a||1,1),31);
+  if(b){ b=Math.min(Math.max(b,1),31); }
+  else { b=a+15; if(b>31) b=a-15; if(b<1) b=a+14; }   /* only for data saved before day2 existed */
+  if(a===b) b=(a>15?a-15:a+15);
+  return a<b?[a,b]:[b,a];
+}
+function onDay(y,m,day){ return new Date(y,m,Math.min(day,lastDayOf(y,m))); }
+function stepBack(d,cycle,anchor,anchor2){
+  var x=new Date(d), y=x.getFullYear(), m=x.getMonth(), cur=x.getDate();
+  if(cycle==="weekly"){ x.setDate(cur-7); return x; }
+  if(cycle==="biweekly"){ x.setDate(cur-14); return x; }
+  if(cycle==="semimonthly"){
+    var p=semiPair(anchor||cur,anchor2), lo=p[0], hi=p[1];
+    if(cur>Math.min(hi,lastDayOf(y,m))) return onDay(y,m,hi);
+    if(cur>Math.min(lo,lastDayOf(y,m))) return onDay(y,m,lo);
+    return onDay(y,m-1,hi);
+  }
+  return onDay(y,m-1,anchor||cur);
+}
+function stepPay(d,cycle,anchor,anchor2){
+  var x=new Date(d), y=x.getFullYear(), m=x.getMonth(), cur=x.getDate();
+  if(cycle==="weekly"){ x.setDate(cur+7); return x; }
+  if(cycle==="biweekly"){ x.setDate(cur+14); return x; }
+  if(cycle==="semimonthly"){
+    var p=semiPair(anchor||cur,anchor2), lo=p[0], hi=p[1];
+    if(cur<Math.min(lo,lastDayOf(y,m))) return onDay(y,m,lo);
+    if(cur<Math.min(hi,lastDayOf(y,m))) return onDay(y,m,hi);
+    return onDay(y,m+1,lo);
+  }
+  /* monthly: keep the anchor day, clamped to the length of each month, never overflowing */
+  return onDay(y,m+1,anchor||cur);
+}
+function lastPayFor(ownerId){
+  var t=today(), best=null;
+  S.income.forEach(function(s){
+    if(s.owner!==ownerId) return;
+    var list=paydays(s,addDays(t,-95),t), l=list[list.length-1];
+    if(l && (!best||l>best)) best=l;
+  });
+  return best;
+}
+function nextPayFor(ownerId){
+  var t=today(), best=null;
+  S.income.forEach(function(s){
+    if(ownerId && s.owner!==ownerId) return;
+    var p=paydays(s,t,addDays(t,400))[0];
+    if(p && (!best || p<best)) best=p;
+  });
+  return best;
+}
+
+/* bills falling due between two dates, by pot */
+function billsDue(from,to,pot){
+  var out=[], t=new Date(from);
+  S.bills.forEach(function(b){
+    if(pot && b.pot!==pot) return;
+    var d=new Date(from.getFullYear(),from.getMonth(),b.day||1);
+    var guard=0;
+    while(d<from && guard++<40) d=new Date(d.getFullYear(),d.getMonth()+1,b.day||1);
+    guard=0;
+    while(d<=to && guard++<40){
+      if(!billPaidFor(b,d)) out.push({bill:b,when:new Date(d)});
+      d=new Date(d.getFullYear(),d.getMonth()+1,b.day||1);
+    }
+  });
+  out.sort(function(x,y){ return x.when-y.when; });
+  return out;
+}
+
+/* ---- the signature calculation ---- */
+function ourSafe(){
+  var t=today(), next=nextPayFor(null)||addDays(t,30);
+  var due=billsDue(t,next,"joint").reduce(function(a,x){ return a+ +x.bill.amount; },0);
+  var p=period(t);
+  var goals=S.goals.filter(function(g){ return g.shared && g.lastPaid!==p; })
+                   .reduce(function(a,g){ return a+(+g.monthly||0); },0);
+  var buffer=+S.settings.buffer||0;
+  return {
+    value:S.balances.joint-due-goals-buffer,
+    balance:S.balances.joint, due:due, goals:goals, buffer:buffer, until:next
+  };
+}
+function yourSafe(id){
+  var t=today(), next=nextPayFor(id)||addDays(t,30);
+  var due=billsDue(t,next,id).reduce(function(a,x){ return a+ +x.bill.amount; },0);
+  /* count spending since this person was last paid, not since the 1st */
+  var since=lastPayFor(id)||new Date(t.getFullYear(),t.getMonth(),1);
+  var spent=S.txns.filter(function(x){ return x.pot===id && parse(x.date)>=since; })
+                  .reduce(function(a,x){ return a+ +x.amount; },0);
+  var allow=+S.allowance[id]||0;
+  return { value:(allow?allow-spent:S.balances[id])-due, allow:allow, spent:spent, due:due, until:next };
+}
+
+/* ---- fair share ---- */
+function fairShare(){
+  var inc={a:0,b:0};
+  S.income.forEach(function(s){ inc[s.owner]=(inc[s.owner]||0)+monthlyAmount(s); });
+  var total=inc.a+inc.b;
+  var ra=total?inc.a/total:.5;
+  var joint=0, ratio={a:0,b:0}, half={a:0,b:0}, chosen={a:0,b:0}, paid={a:0,b:0}, shareOfPaid={a:0,b:0};
+  S.bills.forEach(function(b){
+    if(b.pot!=="joint") return;
+    var amt=+b.amount||0;
+    joint+=amt;
+    ratio.a+=amt*ra;  ratio.b+=amt*(1-ra);
+    half.a+=amt/2;    half.b+=amt/2;
+    var rule=b.split||"default";
+    if(rule==="default") rule=S.settings.split;
+    var ca,cb;
+    if(rule==="half"){ ca=amt/2; cb=amt/2; }
+    else if(rule==="one"){ var o=b.owedBy||"a"; ca=o==="a"?amt:0; cb=amt-ca; }
+    else if(rule==="custom"){ var pa=(b.pct==null?50:+b.pct)/100; ca=amt*pa; cb=amt*(1-pa); }
+    else { ca=amt*ra; cb=amt*(1-ra); }
+    chosen.a+=ca; chosen.b+=cb;
+    if(billPaidFor(b,today())){
+      paid[b.paidBy]+=amt;          /* what each person actually fronted */
+      shareOfPaid.a+=ca; shareOfPaid.b+=cb;   /* what each owed on those same bills */
+    }
+  });
+  /* positive means that person is owed money back */
+  var net={a:paid.a-shareOfPaid.a, b:paid.b-shareOfPaid.b};
+  return {inc:inc,total:total,joint:joint,ra:ra,ratio:ratio,half:half,chosen:chosen,paid:paid,
+          shareOfPaid:shareOfPaid,net:net,owed:{a:chosen.a-paid.a,b:chosen.b-paid.b}};
+}
+
+/* ---- 45-day forecast ---- */
+function forecast(days){
+  days=days||45;
+  var t=today(), bal=S.balances.joint, pts=[], low={v:bal,d:t}, thin=[];
+  var end=addDays(t,days);
+  var allPay=[];
+  S.income.forEach(function(s){ paydays(s,t,end).forEach(function(d){ allPay.push({d:d,amt:+s.amount,owner:s.owner}); }); });
+  var due=billsDue(t,end,"joint");
+  for(var i=0;i<=days;i++){
+    var day=addDays(t,i);
+    allPay.forEach(function(p){ if(iso(p.d)===iso(day)) bal+=p.amt; });
+    due.forEach(function(x){ if(iso(x.when)===iso(day)) bal-=+x.bill.amount; });
+    pts.push({d:day,v:bal});
+    if(bal<low.v){ low={v:bal,d:day}; }
+  }
+  /* flag weeks where nobody is paid, and weeks where only one of you is */
+  var earners={};
+  S.income.forEach(function(s){ earners[s.owner]=1; });
+  var bothEarn=Object.keys(earners).length>1;
+  for(var w=0;w<days-6;w+=7){
+    var from=addDays(t,w), to=addDays(t,w+6), seen={};
+    allPay.forEach(function(p){ if(p.d>=from&&p.d<=to) seen[p.owner]=1; });
+    var who=Object.keys(seen);
+    if(!who.length) thin.push({from:from,to:to,kind:"none"});
+    else if(bothEarn && who.length===1) thin.push({from:from,to:to,kind:"one",who:who[0]});
+  }
+  return {pts:pts,low:low,thin:thin,end:bal};
+}
+
+/* ---- goal maths ---- */
+function monthsToGoal(g,extra){
+  var per=(+g.monthly||0)+(extra||0);
+  if(per<=0) return null;
+  var left=(+g.target||0)-(+g.saved||0);
+  if(left<=0) return 0;
+  return Math.ceil(left/per);
+}
+/* ---- debt maths: months to clear at the current payment ---- */
+function monthsToClear(d){
+  var bal=+d.balance||0, pay=+d.min||0, r=(+d.apr||0)/100/12, m=0;
+  if(bal<=0) return 0;
+  if(pay<=bal*r) return null; /* payment does not cover the interest */
+  while(bal>0 && m<720){ bal=bal*(1+r)-pay; m++; }
+  return m;
+}
+function inMonths(m){
+  if(m==null) return "not on track";
+  var d=new Date(); d.setMonth(d.getMonth()+m);
+  return d.toLocaleDateString(undefined,{month:"long",year:"numeric"});
+}
+function dayLabel(d){ return d.toLocaleDateString(undefined,{day:"numeric",month:"short"}); }
+
+/* ============ render ============ */
+function render(){
+  document.documentElement.setAttribute("data-theme",S.settings.theme==="dark"?"dark":"light");
+  var nav=SCREENS.map(function(s){
+    return '<button class="navitem" data-go="'+s[0]+'" aria-current="'+(S.screen===s[0])+'">'+esc(s[1])+'</button>';
+  }).join("");
+  document.getElementById("nav").innerHTML=nav;
+  document.getElementById("tabbar").innerHTML=SCREENS.map(function(s){
+    return '<button class="navitem" data-go="'+s[0]+'" aria-current="'+(S.screen===s[0])+'">'+esc(s[1].split(" ")[0])+'</button>';
+  }).join("");
+
+  document.getElementById("banner").innerHTML =
+    '<div class="sample"><span><b>Live demo.</b> Everything works, but nothing is saved and refreshing starts over. '+
+    'The full version keeps your numbers on your own device.</span></div>';
+
+  var v=document.getElementById("view");
+  var fn={today:vToday,arrive:vArrive,bills:vBills,share:vShare,spent:vSpent,goals:vGoals,owe:vOwe,settings:vSettings}[S.screen];
+  v.innerHTML=fn?fn():"";
+  save();
+}
+
+/* ---------- Today ---------- */
+function vToday(){
+  if(!S.income.length && !S.bills.length && !S.sample) return firstRun();
+  var o=ourSafe(), ya=yourSafe("a"), yb=yourSafe("b"), f=fairShare();
+  var pa=f.total?Math.round(f.ra*100):50;
+  var msg = o.value<0
+    ? "Joint money runs short before the next payday. The bills below are what's pulling it down."
+    : "That's what's left in the joint pot after every bill due before "+dayLabel(o.until)+", the shared saving, and your buffer.";
+
+  return topline("Good morning, "+esc(nameOf("a"))+" and "+esc(nameOf("b"))+".",
+      "Next money arrives "+(nextPayFor(null)?dayLabel(nextPayFor(null)):"once you add an income"))+
+  '<div class="card hero ours">'+
+    '<div class="label">What we can spend together</div>'+
+    '<div class="num">'+money(o.value)+'</div>'+
+    '<div class="msg">'+msg+'</div>'+
+    '<button class="btn ghost sm" data-act="explain" style="margin-top:12px">'+(S.explain?"Hide the working":"How is this worked out?")+'</button>'+
+    (S.explain? '<div style="margin-top:12px">'+
+      calcRow("In the joint pot",o.balance)+
+      calcRow("Bills due before "+dayLabel(o.until),-o.due)+
+      calcRow("Going to shared saving",-o.goals)+
+      calcRow("Buffer you asked us to leave",-o.buffer)+
+      calcRow("Safe to spend together",o.value,true)+
+    '</div>':"")+
+    '<div class="splitbar"><i style="width:'+pa+'%;background:var(--a)"></i><i style="width:'+(100-pa)+'%;background:var(--b)"></i></div>'+
+    '<div class="splitkey">'+
+      '<span><span class="dot" style="background:var(--a)"></span>'+esc(nameOf("a"))+' brings in '+pa+'%</span>'+
+      '<span><span class="dot" style="background:var(--b)"></span>'+esc(nameOf("b"))+' brings in '+(100-pa)+'%</span>'+
+    '</div>'+
+  '</div>'+
+
+  '<div class="grid g2" style="margin-top:14px">'+
+    personCard("a",ya)+personCard("b",yb)+
+  '</div>'+
+
+  '<div class="card" style="margin-top:14px">'+
+    '<div class="label" style="margin-bottom:8px">Log something you just spent</div>'+
+    '<div class="inline">'+
+      '<div><label class="label" for="q-amt">Amount</label><input id="q-amt" type="number" step="0.01" placeholder="0.00"></div>'+
+      '<div><label class="label" for="q-cat">What for</label><input id="q-cat" placeholder="Groceries"></div>'+
+      '<div><label class="label" for="q-pot">Out of</label><select id="q-pot">'+
+        '<option value="joint">Our joint money</option>'+
+        '<option value="a">'+esc(nameOf("a"))+'\'s own money</option>'+
+        '<option value="b">'+esc(nameOf("b"))+'\'s own money</option>'+
+      '</select></div>'+
+      '<div><label class="label" for="q-by">Who spent it</label><select id="q-by">'+
+        '<option value="a">'+esc(nameOf("a"))+'</option><option value="b">'+esc(nameOf("b"))+'</option>'+
+      '</select></div>'+
+      '<button class="btn" data-act="quicklog">Log it</button>'+
+    '</div>'+
+  '</div>'+
+
+  '<div class="sechead"><h2>Due before the next payday</h2>'+
+    '<button class="btn ghost sm" data-go="bills">All bills</button></div>'+
+  '<div class="card">'+ dueList(o.until) +'</div>';
+}
+function calcRow(label,v,strong){
+  return '<div class="row"'+(strong?' style="border-top:1px solid var(--rule);border-bottom:0"':"")+'>'+
+    '<div class="gr"><div class="nm"'+(strong?' style="font-weight:600"':"")+'>'+label+'</div></div>'+
+    '<div class="amt">'+money(v)+'</div></div>';
+}
+function personCard(id,y){
+  var cls=id==="a"?"mine":"theirs";
+  var np=nextPayFor(id);
+  var note=(y.allow? money(y.allow)+" allowance, "+money(y.spent)+" spent so far"
+                   : "From "+esc(nameOf(id))+"'s own balance")+
+           (np? " · next paid "+dayLabel(np) : " · no income set");
+  return '<div class="card '+cls+'">'+
+    '<div class="label">What '+esc(nameOf(id))+' can spend</div>'+
+    '<div class="pnum" style="color:'+colourOf(id)+'">'+money(y.value)+'</div>'+
+    '<div class="label" style="margin-top:6px">'+note+'</div>'+
+  '</div>';
+}
+function dueList(until){
+  var due=billsDue(today(),until,"joint");
+  if(!due.length) return '<div class="empty">Nothing due between now and then.</div>';
+  return due.map(function(x){
+    return '<div class="row ours"><div class="gr"><div class="nm">'+esc(x.bill.name)+'</div>'+
+      '<div class="meta">'+dayLabel(x.when)+'</div></div>'+
+      '<div class="amt">'+money(x.bill.amount)+'</div></div>';
+  }).join("");
+}
+function firstRun(){
+  return topline("Let's set Tandem up.","Three things and you're done. About two minutes.")+
+  '<div class="card"><h2 style="margin-bottom:10px">Start here</h2>'+
+  '<p class="note">Tandem keeps two incomes and two pay cycles straight, works out a fair split of the shared bills, '+
+  'and gives you one number you can both trust. Nothing leaves this file.</p>'+
+  '<div style="margin-top:16px" class="inline">'+
+  '<button class="btn" data-act="loadsample">Show me sample data first</button>'+
+  '<button class="btn ghost" data-go="settings">Add our names and income</button>'+
+  '</div></div>';
+}
+
+/* ---------- When money arrives ---------- */
+function vArrive(){
+  var f=forecast(45);
+  var vals=f.pts.map(function(p){ return p.v; });
+  var max=Math.max.apply(null,vals.concat([1])), min=Math.min.apply(null,vals.concat([0]));
+  var span=(max-min)||1;
+  var bars=f.pts.map(function(p){
+    var h=Math.max(1,Math.round(((p.v-min)/span)*58));
+    return '<i class="'+(p.v<0?"neg":"")+'" style="height:'+h+'px" title="'+dayLabel(p.d)+": "+money0(p.v)+'"></i>';
+  }).join("");
+
+  var pays=[];
+  S.income.forEach(function(s){
+    paydays(s,today(),addDays(today(),45)).forEach(function(d){
+      pays.push({d:d,owner:s.owner,label:s.label,amt:s.amount});
+    });
+  });
+  pays.sort(function(x,y){ return x.d-y.d; });
+
+  return topline("When money arrives","The next 45 days, joint pot only")+
+  '<div class="card">'+
+    '<div class="label">Where the joint balance goes</div>'+
+    '<div class="bars">'+bars+'</div>'+
+    '<div class="splitkey"><span>'+dayLabel(today())+'</span><span style="margin-left:auto">'+dayLabel(addDays(today(),45))+'</span></div>'+
+    (f.low.v<0
+      ? '<div class="flag">The joint pot dips to '+money(f.low.v)+' around '+dayLabel(f.low.d)+'. Move a bill later or top up before then.</div>'
+      : '<div class="flag good">The joint pot stays positive the whole way, with '+money(f.low.v)+' at its lowest on '+dayLabel(f.low.d)+'.</div>')+
+    f.thin.map(function(w){
+      return '<div class="flag">'+(w.kind==="none"
+        ? "No money arrives at all between "+dayLabel(w.from)+" and "+dayLabel(w.to)+". Worth holding something back."
+        : "Only "+esc(nameOf(w.who))+" gets paid between "+dayLabel(w.from)+" and "+dayLabel(w.to)+". That week runs on one income.")+'</div>';
+    }).join("")+
+  '</div>'+
+  '<div class="sechead"><h2>Paydays coming up</h2></div>'+
+  '<div class="card">'+
+    (pays.length? pays.map(function(p){
+      return '<div class="row '+(p.owner==="a"?"mine":"theirs")+'"><div class="gr"><div class="nm">'+esc(p.label||nameOf(p.owner))+'</div>'+
+        '<div class="meta">'+esc(nameOf(p.owner))+' · '+dayLabel(p.d)+'</div></div>'+
+        '<div class="amt" style="color:'+colourOf(p.owner)+'">'+money(p.amt)+'</div></div>';
+    }).join("") : '<div class="empty">Add an income in Settings and this fills in.</div>')+
+  '</div>';
+}
+
+/* ---------- Bills ---------- */
+function vBills(){
+  var rows=S.bills.slice().sort(function(a,b){ return (a.day||0)-(b.day||0); }).map(function(b){
+    var cls=b.pot==="joint"?"ours":b.pot==="a"?"mine":"theirs";
+    var who=b.pot==="joint"?"Shared":esc(nameOf(b.pot))+" only";
+    var isPaid=billPaidFor(b,today());
+    var paid=isPaid?("paid this month by "+esc(nameOf(b.paidBy))):"";
+    return '<div class="row '+cls+'"><div class="gr"><div class="nm">'+esc(b.name)+'</div>'+
+      '<div class="meta">Day '+ (b.day||1) +' · '+who+(paid?" · "+paid:"")+'</div></div>'+
+      '<span class="tag">'+splitLabel(b)+'</span>'+
+      '<div class="amt">'+money(b.amount)+'</div>'+
+      (isPaid
+        ? '<button class="btn ghost sm" data-act="unpaid" data-id="'+b.id+'">Not paid yet</button>'
+        : '<button class="btn ghost sm" data-act="paid" data-id="'+b.id+'" data-who="a">'+esc(nameOf("a"))+' paid</button>'+
+          '<button class="btn ghost sm" data-act="paid" data-id="'+b.id+'" data-who="b">'+esc(nameOf("b"))+' paid</button>')+
+      '<button class="btn ghost sm" data-act="delbill" data-id="'+b.id+'">Remove</button></div>';
+  }).join("");
+  var total=S.bills.filter(function(b){ return b.pot==="joint"; })
+                   .reduce(function(a,b){ return a+ +b.amount; },0);
+
+  return topline("Bills coming up","Everything that repeats, and who it belongs to")+
+  '<div class="card">'+ (rows||'<div class="empty">No bills yet. Add the first one below.</div>') +'</div>'+
+  '<div class="card" style="margin-top:14px">'+
+    '<div class="label" style="margin-bottom:8px">Add a bill</div>'+
+    '<div class="inline">'+
+      '<div><label class="label" for="bl-n">Name</label><input id="bl-n" placeholder="Rent"></div>'+
+      '<div><label class="label" for="bl-a">Amount</label><input id="bl-a" type="number" step="0.01"></div>'+
+      '<div><label class="label" for="bl-d">Day of month</label><input id="bl-d" type="number" min="1" max="28" value="1"></div>'+
+      '<div><label class="label" for="bl-p">Paid from</label><select id="bl-p">'+
+        '<option value="joint">Joint money</option><option value="a">'+esc(nameOf("a"))+'</option><option value="b">'+esc(nameOf("b"))+'</option>'+
+      '</select></div>'+
+      '<div><label class="label" for="bl-s">Split</label><select id="bl-s">'+
+        '<option value="default">Our house rule</option><option value="ratio">By income</option>'+
+        '<option value="half">50/50</option><option value="custom">Custom %</option><option value="one">One of us</option>'+
+      '</select></div>'+
+      '<div><label class="label" for="bl-p2">'+esc(nameOf("a"))+'\'s % (custom only)</label><input id="bl-p2" type="number" min="0" max="100" value="50"></div>'+
+      '<div><label class="label" for="bl-o2">Whose, if one of us</label><select id="bl-o2">'+
+        '<option value="a">'+esc(nameOf("a"))+'</option><option value="b">'+esc(nameOf("b"))+'</option>'+
+      '</select></div>'+
+      '<button class="btn" data-act="addbill">Add bill</button>'+
+    '</div>'+
+    '<div class="note" style="margin-top:12px">Shared bills total '+money(total)+' a month.</div>'+
+  '</div>';
+}
+
+/* ---------- Who pays what ---------- */
+function splitLabel(b){
+  var r=b.split||"default";
+  if(r==="default") return "house rule";
+  if(r==="half") return "50/50";
+  if(r==="custom") return (b.pct==null?50:b.pct)+"/"+(100-(b.pct==null?50:b.pct));
+  if(r==="one") return esc(nameOf(b.owedBy||"a"))+" only";
+  return "by income";
+}
+function vShare(){
+  var f=fairShare();
+  if(!f.total) return topline("Who pays what","")+'<div class="card"><div class="empty">Add both incomes in Settings and the split works itself out.</div></div>';
+  var pa=Math.round(f.ra*100);
+  var net=f.net.a;
+  var settleLine = (f.paid.a+f.paid.b)<0.01
+    ? "Nothing paid yet this month, so nobody owes anybody."
+    : Math.abs(net)<0.01
+      ? "You're square this month."
+      : (net>0 ? esc(nameOf("b"))+" owes "+esc(nameOf("a"))+" "+money(net)
+               : esc(nameOf("a"))+" owes "+esc(nameOf("b"))+" "+money(-net))+" to even up.";
+
+  function col(id,label,v,note){
+    return '<div class="card '+(id==="a"?"mine":"theirs")+'"><div class="label">'+label+'</div>'+
+      '<div class="pnum" style="color:'+colourOf(id)+'">'+money(v)+'</div>'+
+      '<div class="label" style="margin-top:6px">'+note+'</div></div>';
+  }
+
+  return topline("Who pays what",money(f.joint)+" of shared bills every month")+
+  '<div class="card">'+
+    '<div class="label">Split by what each of you earns</div>'+
+    '<div class="splitbar" style="margin-top:12px"><i style="width:'+pa+'%;background:var(--a)"></i><i style="width:'+(100-pa)+'%;background:var(--b)"></i></div>'+
+    '<div class="splitkey">'+
+      '<span><span class="dot" style="background:var(--a)"></span>'+esc(nameOf("a"))+' · '+money0(f.inc.a)+' a month · '+pa+'%</span>'+
+      '<span><span class="dot" style="background:var(--b)"></span>'+esc(nameOf("b"))+' · '+money0(f.inc.b)+' a month · '+(100-pa)+'%</span>'+
+    '</div>'+
+  '</div>'+
+
+  '<div class="grid g2" style="margin-top:14px">'+
+    col("a",esc(nameOf("a"))+"'s share by income",f.ratio.a,"50/50 would be "+money(f.half.a))+
+    col("b",esc(nameOf("b"))+"'s share by income",f.ratio.b,"50/50 would be "+money(f.half.b))+
+  '</div>'+
+
+  '<div class="card" style="margin-top:14px">'+
+    '<div class="label">Which way do you want to split it?</div>'+
+    '<div class="inline" style="margin-top:8px">'+
+      '<button class="btn '+(S.settings.split==="ratio"?"":"ghost")+'" data-act="split" data-v="ratio">Split by income</button>'+
+      '<button class="btn '+(S.settings.split==="half"?"":"ghost")+'" data-act="split" data-v="half">Split down the middle</button>'+
+    '</div>'+
+    '<div class="note" style="margin-top:12px">Neither is more correct. Splitting by income keeps the pinch equal; '+
+    'splitting down the middle keeps the arithmetic simple. Pick the one you can both live with.</div>'+
+  '</div>'+
+
+  '<div class="card '+(Math.abs(net)<0.01?"":"ours")+'" style="margin-top:14px">'+
+    '<div class="label">Evening up</div>'+
+    '<div class="pnum">'+settleLine+'</div>'+
+    '<div class="note" style="margin-top:8px">'+esc(nameOf("a"))+' has paid '+money(f.paid.a)+' of bills and owed '+money(f.shareOfPaid.a)+' of them. '+
+    esc(nameOf("b"))+' has paid '+money(f.paid.b)+' and owed '+money(f.shareOfPaid.b)+'. '+
+    'Only bills you have actually marked paid count here, so the number stays right mid-month.</div>'+
+  '</div>';
+}
+
+/* ---------- Where it went ---------- */
+function vSpent(){
+  var t=today(), from=new Date(t.getFullYear(),t.getMonth(),1);
+  var f=S.spendFilter||"all";
+  var rows=S.txns.filter(function(x){ return parse(x.date)>=from && (f==="all"||x.pot===f); })
+                 .sort(function(a,b){ return parse(b.date)-parse(a.date); });
+  var by={}; rows.forEach(function(x){ by[x.cat||"Other"]=(by[x.cat||"Other"]||0)+ +x.amount; });
+  var cats=Object.keys(by).sort(function(a,b){ return by[b]-by[a]; });
+  var max=cats.length?by[cats[0]]:1;
+  var tot={joint:0,a:0,b:0}; rows.forEach(function(x){ tot[x.pot]=(tot[x.pot]||0)+ +x.amount; });
+
+  function fb(v,label){ return '<button class="btn '+(f===v?"":"ghost")+' sm" data-act="filter" data-v="'+v+'">'+label+'</button>'; }
+  return topline("Where it went","This month so far")+
+  '<div class="inline" style="margin-bottom:14px">'+
+    fb("all","Everything")+fb("joint","Ours")+fb("a",esc(nameOf("a"))+"'s")+fb("b",esc(nameOf("b"))+"'s")+
+    '<div style="flex:1"></div>'+
+  '</div>'+
+  '<div class="grid g3">'+
+    '<div class="card ours"><div class="label">Out of joint money</div><div class="pnum">'+money(tot.joint||0)+'</div></div>'+
+    '<div class="card mine"><div class="label">'+esc(nameOf("a"))+'\'s own</div><div class="pnum" style="color:var(--a)">'+money(tot.a||0)+'</div></div>'+
+    '<div class="card theirs"><div class="label">'+esc(nameOf("b"))+'\'s own</div><div class="pnum" style="color:var(--b)">'+money(tot.b||0)+'</div></div>'+
+  '</div>'+
+  '<div class="sechead"><h2>What each kind of spending took</h2></div>'+
+  '<div class="card">'+ (cats.length? cats.map(function(c){
+      return '<div class="row"><div class="gr"><div class="nm">'+esc(c)+'</div>'+
+        '<div class="track"><i style="width:'+Math.round((by[c]/max)*100)+'%;background:var(--a)"></i></div></div>'+
+        '<div class="amt">'+money(by[c])+'</div></div>';
+    }).join("") : '<div class="empty">Nothing logged this month yet.</div>') +'</div>'+
+  '<div class="sechead"><h2>Things that already happened</h2></div>'+
+  '<div class="card">'+ (rows.length? rows.map(function(x){
+      var cls=x.pot==="joint"?"ours":x.pot==="a"?"mine":"theirs";
+      return '<div class="row '+cls+'"><div class="gr"><div class="nm">'+esc(x.cat||"Spending")+'</div>'+
+        '<div class="meta">'+dayLabel(parse(x.date))+' · logged by '+esc(nameOf(x.by))+'</div></div>'+
+        '<div class="amt">'+money(x.amount)+'</div>'+
+        '<button class="btn ghost sm" data-act="deltxn" data-id="'+x.id+'">Remove</button></div>';
+    }).join("") : '<div class="empty">Log your first spend on the Today screen.</div>') +'</div>';
+}
+
+/* ---------- Goals ---------- */
+function vGoals(){
+  var cards=S.goals.map(function(g){
+    var pct=Math.min(100,Math.round(((+g.saved||0)/(+g.target||1))*100));
+    var m=monthsToGoal(g,0), m2=monthsToGoal(g,100);
+    var whatif = (m!=null&&m2!=null&&m>m2)
+      ? "Put in "+money0(100)+" more a month and you'd get there "+(m-m2)+" month"+((m-m2)>1?"s":"")+" sooner."
+      : "Set a monthly amount and Tandem will work out the date.";
+    var cls=g.shared?"ours":(g.owner==="a"?"mine":"theirs");
+    return '<div class="card '+cls+'">'+
+      '<div class="row" style="border:0;padding:0"><div class="gr"><div class="nm" style="font-size:16px">'+esc(g.name)+'</div>'+
+      '<div class="meta">'+(g.shared?"Both of us":esc(nameOf(g.owner))+" only")+' · '+money0(g.monthly||0)+' a month</div></div>'+
+      '<div class="amt">'+money0(g.saved)+' / '+money0(g.target)+'</div></div>'+
+      '<div class="track"><i style="width:'+pct+'%;background:'+(g.shared?"var(--a)":colourOf(g.owner))+'"></i></div>'+
+      '<div class="note" style="margin-top:8px">'+(m===0?"Done.":m!=null?("On track for "+inMonths(m)+"."):"No monthly amount set yet.")+'</div>'+
+      '<div class="note" style="margin-top:4px">'+whatif+'</div>'+
+      '<div class="inline" style="margin-top:10px">'+
+        (g.lastPaid===period(today())
+          ? '<span class="tag">'+money0(g.monthly||0)+' already put in this month</span>'
+          : '<button class="btn ghost sm" data-act="addsave" data-id="'+g.id+'">Put in this month\'s '+money0(g.monthly||0)+'</button>')+
+        '<button class="btn ghost sm" data-act="delgoal" data-id="'+g.id+'">Remove</button>'+
+      '</div>'+
+    '</div>';
+  }).join("");
+
+  return topline("What we're saving for","")+
+  '<div class="grid g2">'+ (cards||'<div class="card"><div class="empty">Nothing yet. Add your first one below.</div></div>') +'</div>'+
+  '<div class="card" style="margin-top:14px">'+
+    '<div class="label" style="margin-bottom:8px">Add a goal</div>'+
+    '<div class="inline">'+
+      '<div><label class="label" for="gl-n">What for</label><input id="gl-n" placeholder="Emergency fund"></div>'+
+      '<div><label class="label" for="gl-t">Target</label><input id="gl-t" type="number"></div>'+
+      '<div><label class="label" for="gl-s">Saved already</label><input id="gl-s" type="number" value="0"></div>'+
+      '<div><label class="label" for="gl-m">Each month</label><input id="gl-m" type="number"></div>'+
+      '<div><label class="label" for="gl-o">Whose</label><select id="gl-o">'+
+        '<option value="shared">Both of us</option><option value="a">'+esc(nameOf("a"))+'</option><option value="b">'+esc(nameOf("b"))+'</option>'+
+      '</select></div>'+
+      '<button class="btn" data-act="addgoal">Add goal</button>'+
+    '</div>'+
+  '</div>';
+}
+
+/* ---------- Debts ---------- */
+function vOwe(){
+  var total=S.debts.reduce(function(a,d){ return a+ +d.balance; },0);
+  var last=0, ok=true;
+  S.debts.forEach(function(d){ var m=monthsToClear(d); if(m==null){ ok=false; } else if(m>last) last=m; });
+  var rows=S.debts.map(function(d){
+    var m=monthsToClear(d);
+    var cls=d.owner==="joint"?"ours":d.owner==="a"?"mine":"theirs";
+    return '<div class="row '+cls+'"><div class="gr"><div class="nm">'+esc(d.name)+'</div>'+
+      '<div class="meta">'+(d.owner==="joint"?"Both of us":esc(nameOf(d.owner)))+' · '+(+d.apr||0)+'% · '+money0(d.min)+' a month</div></div>'+
+      '<span class="tag">'+(m==null?"payment too low":"clear by "+inMonths(m))+'</span>'+
+      '<div class="amt">'+money(d.balance)+'</div>'+
+      '<button class="btn ghost sm" data-act="deldebt" data-id="'+d.id+'">Remove</button></div>';
+  }).join("");
+
+  return topline("What we still owe",money(total)+" between you")+
+  '<div class="card hero ours"><div class="label">Everything cleared by</div>'+
+    '<div class="num">'+(S.debts.length? (ok?inMonths(last):"not yet on track") : "nothing owed")+'</div>'+
+    (S.debts.length&&!ok? '<div class="flag">One payment is smaller than the interest it accrues, so that balance grows instead of shrinking. Raise it above the monthly interest first.</div>':"")+
+  '</div>'+
+  '<div class="card" style="margin-top:14px">'+ (rows||'<div class="empty">Nothing owed. Good place to be.</div>') +'</div>'+
+  '<div class="card" style="margin-top:14px">'+
+    '<div class="label" style="margin-bottom:8px">Add something you owe</div>'+
+    '<div class="inline">'+
+      '<div><label class="label" for="db-n">Name</label><input id="db-n" placeholder="Credit card"></div>'+
+      '<div><label class="label" for="db-b">Balance</label><input id="db-b" type="number"></div>'+
+      '<div><label class="label" for="db-r">Interest %</label><input id="db-r" type="number" step="0.1"></div>'+
+      '<div><label class="label" for="db-m">Paying monthly</label><input id="db-m" type="number"></div>'+
+      '<div><label class="label" for="db-o">Whose</label><select id="db-o">'+
+        '<option value="joint">Both of us</option><option value="a">'+esc(nameOf("a"))+'</option><option value="b">'+esc(nameOf("b"))+'</option>'+
+      '</select></div>'+
+      '<button class="btn" data-act="adddebt">Add</button>'+
+    '</div>'+
+  '</div>';
+}
+
+/* ---------- Settings ---------- */
+function vSettings(){
+  var inc=S.income.map(function(s){
+    return '<div class="row '+(s.owner==="a"?"mine":"theirs")+'"><div class="gr"><div class="nm">'+esc(s.label||"Income")+'</div>'+
+      '<div class="meta">'+esc(nameOf(s.owner))+' · '+cycleLabel(s)+' · next on '+dayLabel(parse(s.next))+'</div></div>'+
+      '<div class="amt" style="color:'+colourOf(s.owner)+'">'+money(s.amount)+'</div>'+
+      '<button class="btn ghost sm" data-act="delinc" data-id="'+s.id+'">Remove</button></div>';
+  }).join("");
+
+  return topline("Settings","")+
+  '<div class="card"><h2 style="margin-bottom:12px">The two of you</h2>'+
+    '<div class="grid g2">'+
+      '<div><label class="label" for="nm-a">First name</label><input id="nm-a" value="'+esc(S.people[0].name)+'" data-set="name.a"></div>'+
+      '<div><label class="label" for="nm-b">First name</label><input id="nm-b" value="'+esc(S.people[1].name)+'" data-set="name.b"></div>'+
+    '</div>'+
+  '</div>'+
+
+  '<div class="card" style="margin-top:14px"><h2 style="margin-bottom:12px">What\'s in the pots right now</h2>'+
+    '<div class="grid g3">'+
+      '<div><label class="label" for="ba-j">Joint balance</label><input id="ba-j" type="number" value="'+(+S.balances.joint||0)+'" data-set="bal.joint"></div>'+
+      '<div><label class="label" for="ba-a">'+esc(nameOf("a"))+'\'s own</label><input id="ba-a" type="number" value="'+(+S.balances.a||0)+'" data-set="bal.a"></div>'+
+      '<div><label class="label" for="ba-b">'+esc(nameOf("b"))+'\'s own</label><input id="ba-b" type="number" value="'+(+S.balances.b||0)+'" data-set="bal.b"></div>'+
+    '</div>'+
+    '<div class="grid g3" style="margin-top:12px">'+
+      '<div><label class="label" for="al-a">'+esc(nameOf("a"))+'\'s monthly allowance</label><input id="al-a" type="number" value="'+(+S.allowance.a||0)+'" data-set="allow.a"></div>'+
+      '<div><label class="label" for="al-b">'+esc(nameOf("b"))+'\'s monthly allowance</label><input id="al-b" type="number" value="'+(+S.allowance.b||0)+'" data-set="allow.b"></div>'+
+      '<div><label class="label" for="bu">Buffer to leave in joint</label><input id="bu" type="number" value="'+(+S.settings.buffer||0)+'" data-set="buffer"></div>'+
+    '</div>'+
+    '<div class="note" style="margin-top:10px">Leave an allowance at zero to spend from that person\'s own balance instead.</div>'+
+  '</div>'+
+
+  '<div class="card" style="margin-top:14px"><h2 style="margin-bottom:12px">Money coming in</h2>'+
+    (inc||'<div class="empty">No income yet.</div>')+
+    '<div class="inline" style="margin-top:14px">'+
+      '<div><label class="label" for="in-l">Name it</label><input id="in-l" placeholder="Salary"></div>'+
+      '<div><label class="label" for="in-o">Whose</label><select id="in-o"><option value="a">'+esc(nameOf("a"))+'</option><option value="b">'+esc(nameOf("b"))+'</option></select></div>'+
+      '<div><label class="label" for="in-a">Amount each time</label><input id="in-a" type="number"></div>'+
+      '<div><label class="label" for="in-c">How often</label><select id="in-c">'+
+        '<option value="monthly">Monthly</option><option value="biweekly">Every two weeks</option>'+
+        '<option value="weekly">Weekly</option><option value="semimonthly">Twice a month</option></select></div>'+
+      '<div><label class="label" for="in-n">Next one lands</label><input id="in-n" type="date" value="'+iso(today())+'"></div>'+
+      '<div><label class="label" for="in-2">Other payday, if twice a month</label><input id="in-2" type="number" min="1" max="31" placeholder="e.g. 15"></div>'+
+      '<button class="btn" data-act="addinc">Add income</button>'+
+    '</div>'+
+    '<div class="note" style="margin-top:10px">Paid twice a month? Give both days. '+
+    'For the 1st and the 15th, set the next date to whichever comes first and put the other day here. '+
+    'For the 15th and the last day of the month, enter 31 and Tandem will use the 30th, 28th or 29th as each month needs.</div>'+
+  '</div>'+
+
+  '<div class="card" style="margin-top:14px"><h2 style="margin-bottom:12px">How it looks</h2>'+
+    '<div class="inline">'+
+      '<button class="btn '+(S.settings.theme!=="dark"?"":"ghost")+'" data-act="theme" data-v="light">Light</button>'+
+      '<button class="btn '+(S.settings.theme==="dark"?"":"ghost")+'" data-act="theme" data-v="dark">Dark</button>'+
+      '<div><label class="label" for="cur">Currency symbol</label><input id="cur" value="'+esc(S.settings.currency)+'" data-set="cur" maxlength="3"></div>'+
+    '</div>'+
+  '</div>'+
+
+  '<div class="card" style="margin-top:14px"><h2 style="margin-bottom:12px">Your data</h2>'+
+    '<p class="note">In the full version everything lives on your own device and nothing is sent anywhere. '+
+    'You can save a copy as a file and reopen it later. Saving is switched off in this demo.</p>'+
+    '<div class="inline" style="margin-top:12px">'+
+      '<button class="btn ghost" data-act="print">Print this month</button>'+
+      '<button class="btn ghost" data-act="loadsample">Reset the demo</button>'+
+    '</div>'+
+    '<input type="file" id="importfile" accept="application/json" style="display:none">'+
+  '</div>';
+}
+
+function cycleLabel(s){
+  if(s.cycle!=="semimonthly") return {weekly:"weekly",biweekly:"every two weeks",monthly:"monthly"}[s.cycle]||s.cycle;
+  var p=semiPair(parse(s.next).getDate(),+s.day2||0);
+  var day=function(n){ return n>=31?"the last day":"the "+n+ordinal(n); };
+  return "twice a month, on "+day(p[0])+" and "+day(p[1]);
+}
+function ordinal(n){
+  if(n>3&&n<21) return "th";
+  return {1:"st",2:"nd",3:"rd"}[n%10]||"th";
+}
+function topline(h,s){
+  return '<div class="topline"><div><div class="greet">'+h+'</div>'+(s?'<div class="sub">'+s+'</div>':"")+'</div></div>';
+}
+
+/* ============ events ============ */
+function val(id){ var e=document.getElementById(id); return e?e.value:""; }
+function num(id){ return parseFloat(val(id))||0; }
+
+document.addEventListener("click",function(ev){
+  var t=ev.target.closest("[data-go],[data-act]"); if(!t) return;
+  if(t.dataset.go){ S.screen=t.dataset.go; render(); window.scrollTo(0,0); return; }
+  var a=t.dataset.act, id=t.dataset.id;
+
+  if(a==="quicklog"){
+    var amt=num("q-amt"); if(!amt) return;
+    S.txns.push({id:uid(),date:iso(today()),amount:amt,cat:val("q-cat")||"Spending",pot:val("q-pot"),by:val("q-by")||"a"});
+    var pot=val("q-pot"); if(S.balances[pot]!=null) S.balances[pot]-=amt;
+    render();
+  }
+  else if(a==="addbill"){
+    if(!val("bl-n")) return;
+    S.bills.push({id:uid(),name:val("bl-n"),amount:num("bl-a"),day:Math.min(28,Math.max(1,num("bl-d")||1)),
+                  pot:val("bl-p"),split:val("bl-s"),pct:num("bl-p2"),owedBy:val("bl-o2"),paidBy:""});
+    render();
+  }
+  else if(a==="delbill"){ S.bills=S.bills.filter(function(b){ return b.id!==id; }); render(); }
+  else if(a==="paid"){
+    var who=t.dataset.who||"a";
+    S.bills.forEach(function(b){ if(b.id===id){ b.paidBy=who; b.paidPeriod=period(today()); } });
+    render();
+  }
+  else if(a==="unpaid"){
+    S.bills.forEach(function(b){ if(b.id===id){ b.paidBy=""; b.paidPeriod=""; } });
+    render();
+  }
+  else if(a==="split"){ S.settings.split=t.dataset.v; render(); }
+  else if(a==="explain"){ S.explain=!S.explain; render(); }
+  else if(a==="filter"){ S.spendFilter=t.dataset.v; render(); }
+  else if(a==="deltxn"){
+    var x=S.txns.filter(function(y){ return y.id===id; })[0];
+    if(x && S.balances[x.pot]!=null) S.balances[x.pot]+= +x.amount;
+    S.txns=S.txns.filter(function(y){ return y.id!==id; }); render();
+  }
+  else if(a==="addgoal"){
+    if(!val("gl-n")) return;
+    var who=val("gl-o");
+    S.goals.push({id:uid(),name:val("gl-n"),target:num("gl-t"),saved:num("gl-s"),monthly:num("gl-m"),
+                  shared:who==="shared",owner:who==="shared"?"":who,date:""});
+    render();
+  }
+  else if(a==="addsave"){
+    S.goals.forEach(function(g){
+      if(g.id!==id || g.lastPaid===period(today())) return;
+      var amt=+g.monthly||0;
+      g.saved=(+g.saved||0)+amt;
+      g.lastPaid=period(today());
+      if(g.shared) S.balances.joint-=amt; else if(S.balances[g.owner]!=null) S.balances[g.owner]-=amt;
+    });
+    render();
+  }
+  else if(a==="delgoal"){ S.goals=S.goals.filter(function(g){ return g.id!==id; }); render(); }
+  else if(a==="adddebt"){
+    if(!val("db-n")) return;
+    S.debts.push({id:uid(),name:val("db-n"),balance:num("db-b"),apr:num("db-r"),min:num("db-m"),owner:val("db-o")});
+    render();
+  }
+  else if(a==="deldebt"){ S.debts=S.debts.filter(function(d){ return d.id!==id; }); render(); }
+  else if(a==="addinc"){
+    if(!num("in-a")) return;
+    S.income.push({id:uid(),owner:val("in-o"),label:val("in-l")||"Income",amount:num("in-a"),
+                   cycle:val("in-c"),next:val("in-n")||iso(today()),day2:num("in-2")||0});
+    render();
+  }
+  else if(a==="delinc"){ S.income=S.income.filter(function(s){ return s.id!==id; }); render(); }
+  else if(a==="theme"){ S.settings.theme=t.dataset.v; render(); }
+  else if(a==="loadsample"){ S=sample(); S.screen="today"; render(); }
+  else if(a==="clearsample"){ var sc=S.screen; S=blank(); S.screen=sc; render(); }
+  else if(a==="reset"){
+    if(confirm("This erases everything in Tandem on this device. Save a copy first if you want one.")){ S=blank(); render(); }
+  }
+  else if(a==="print"){ window.print(); }
+  else if(a==="export"){
+    var blob=new Blob([JSON.stringify(S,null,2)],{type:"application/json"});
+    var url=URL.createObjectURL(blob), link=document.createElement("a");
+    link.href=url; link.download="tandem-"+iso(today())+".json"; link.click();
+    setTimeout(function(){ URL.revokeObjectURL(url); },500);
+  }
+  else if(a==="importbtn"){ document.getElementById("importfile").click(); }
+});
+
+document.addEventListener("change",function(ev){
+  if(ev.target.id==="importfile"){
+    var f=ev.target.files[0]; if(!f) return;
+    var r=new FileReader();
+    r.onload=function(){
+      try{ S=Object.assign(blank(),JSON.parse(r.result)); render(); }
+      catch(e){ alert("That file isn't a Tandem copy. Look for one named tandem-<date>.json."); }
+    };
+    r.readAsText(f);
+  }
+});
+
+document.addEventListener("input",function(ev){
+  var k=ev.target.dataset.set; if(!k) return;
+  var v=ev.target.value;
+  if(k==="name.a") S.people[0].name=v;
+  else if(k==="name.b") S.people[1].name=v;
+  else if(k==="bal.joint") S.balances.joint=parseFloat(v)||0;
+  else if(k==="bal.a") S.balances.a=parseFloat(v)||0;
+  else if(k==="bal.b") S.balances.b=parseFloat(v)||0;
+  else if(k==="allow.a") S.allowance.a=parseFloat(v)||0;
+  else if(k==="allow.b") S.allowance.b=parseFloat(v)||0;
+  else if(k==="buffer") S.settings.buffer=parseFloat(v)||0;
+  else if(k==="cur") S.settings.currency=v||"$";
+  save();
+});
+
+render();
+</script>
+</body>
+</html>
