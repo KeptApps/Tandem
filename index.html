@@ -229,9 +229,9 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--a); outlin
 /* ============ storage ============ */
 var KEY="tandem.v1";
 var SCREENS=[
-  ["today","Today"],["arrive","When money arrives"],["bills","Bills coming up"],
-  ["share","Who pays what"],["spent","Where it went"],["goals","What we're saving for"],
-  ["owe","What we still owe"],["settings","Settings"]
+  ["today","Today","Today"],["arrive","When money arrives","Paydays"],["bills","Bills coming up","Bills"],
+  ["share","Who pays what","Split"],["spent","Where it went","Spending"],["goals","What we're saving for","Saving"],
+  ["owe","What we still owe","Debts"],["settings","Settings","Settings"]
 ];
 
 function blank(){
@@ -542,7 +542,7 @@ function render(){
   document.getElementById("nav").innerHTML=nav;
   document.getElementById("tabbar").innerHTML=SCREENS.map(function(s){
     return '<button class="navitem" data-go="'+s[0]+'" aria-current="'+(S.screen===s[0])+'">'+
-           icon(s[0],19)+'<span>'+esc(s[1].split(" ")[0])+'</span></button>';
+           icon(s[0],19)+'<span>'+esc(s[2]||s[1])+'</span></button>';
   }).join("");
 
   var v=document.getElementById("view");
