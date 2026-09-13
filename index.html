@@ -276,7 +276,17 @@ function load(){
 function save(){ /* demo build: nothing is written to this device */ }
 
 /* ============ helpers ============ */
-function iso(d){ return d.toISOString().slice(0,10); }
+function iso(d){
+  return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2);
+}
+function isTandemCopy(o){
+  return !!o && typeof o==="object" && !Array.isArray(o) &&
+         Array.isArray(o.people) && o.people.length===2 &&
+         Array.isArray(o.income) && Array.isArray(o.bills) &&
+         Array.isArray(o.goals) && Array.isArray(o.debts) &&
+         !!o.balances && typeof o.balances==="object" &&
+         !!o.settings && typeof o.settings==="object";
+}
 function period(d){ return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2); }
 function billPaidFor(b,d){ return !!b.paidBy && b.paidPeriod===period(d); }
 function today(){ var t=new Date(); return new Date(t.getFullYear(),t.getMonth(),t.getDate()); }
@@ -375,13 +385,14 @@ function billsDue(from,to,pot){
   var out=[], t=new Date(from);
   S.bills.forEach(function(b){
     if(pot && b.pot!==pot) return;
-    var d=new Date(from.getFullYear(),from.getMonth(),b.day||1);
+    var day=b.day||1;
+    var d=onDay(from.getFullYear(),from.getMonth(),day);
     var guard=0;
-    while(d<from && guard++<40) d=new Date(d.getFullYear(),d.getMonth()+1,b.day||1);
+    while(d<from && guard++<40) d=onDay(d.getFullYear(),d.getMonth()+1,day);
     guard=0;
     while(d<=to && guard++<40){
       if(!billPaidFor(b,d)) out.push({bill:b,when:new Date(d)});
-      d=new Date(d.getFullYear(),d.getMonth()+1,b.day||1);
+      d=onDay(d.getFullYear(),d.getMonth()+1,day);
     }
   });
   out.sort(function(x,y){ return x.when-y.when; });
@@ -450,7 +461,13 @@ function forecast(days){
   var t=today(), bal=S.balances.joint, pts=[], low={v:bal,d:t}, thin=[];
   var end=addDays(t,days);
   var allPay=[];
-  S.income.forEach(function(s){ paydays(s,t,end).forEach(function(d){ allPay.push({d:d,amt:+s.amount,owner:s.owner}); }); });
+  S.income.forEach(function(s){
+    paydays(s,t,end).forEach(function(d){
+      /* still a payday for the calendar and the thin-week check, but only lifts the
+         joint line if that income actually goes into the joint pot */
+      allPay.push({d:d,amt:(s.to==="own"?0:+s.amount),owner:s.owner});
+    });
+  });
   var due=billsDue(t,end,"joint");
   for(var i=0;i<=days;i++){
     var day=addDays(t,i);
@@ -776,7 +793,7 @@ function vBills(){
     '<div class="inline">'+
       '<div><label class="label" for="bl-n">Name</label><input id="bl-n" placeholder="Rent"></div>'+
       '<div><label class="label" for="bl-a">Amount</label><input id="bl-a" type="number" step="0.01"></div>'+
-      '<div><label class="label" for="bl-d">Day of month</label><input id="bl-d" type="number" min="1" max="28" value="1"></div>'+
+      '<div><label class="label" for="bl-d">Day of month</label><input id="bl-d" type="number" min="1" max="31" value="1"></div>'+
       '<div><label class="label" for="bl-p">Paid from</label><select id="bl-p">'+
         '<option value="joint">Joint money</option><option value="a">'+esc(nameOf("a"))+'</option><option value="b">'+esc(nameOf("b"))+'</option>'+
       '</select></div>'+
@@ -790,7 +807,9 @@ function vBills(){
       '</select></div>'+
       '<button class="btn" data-act="addbill">Add bill</button>'+
     '</div>'+
-    '<div class="note" style="margin-top:12px">Shared bills total '+money(total)+' a month.</div>'+
+    '<div class="note" style="margin-top:10px">For a bill due on the last day of the month, enter 31. '+
+    'Tandem will use the 30th, 29th or 28th as each month needs.</div>'+
+    '<div class="note" style="margin-top:6px">Shared bills total '+money(total)+' a month.</div>'+
   '</div>';
 }
 
@@ -976,7 +995,8 @@ function vOwe(){
 function vSettings(){
   var inc=S.income.map(function(s){
     return '<div class="row '+(s.owner==="a"?"mine":"theirs")+'"><div class="gr"><div class="nm">'+esc(s.label||"Income")+'</div>'+
-      '<div class="meta">'+esc(nameOf(s.owner))+' · '+cycleLabel(s)+' · next on '+dayLabel(parse(s.next))+'</div></div>'+
+      '<div class="meta">'+esc(nameOf(s.owner))+' · '+cycleLabel(s)+' · next on '+dayLabel(parse(s.next))+
+        ' · into '+(s.to==="own"?"their own account":"the joint pot")+'</div></div>'+
       '<div class="amt" style="color:'+colourOf(s.owner)+'">'+money(s.amount)+'</div>'+
       '<button class="btn ghost sm" data-act="delinc" data-id="'+s.id+'">Remove</button></div>';
   }).join("");
@@ -1014,6 +1034,9 @@ function vSettings(){
         '<option value="weekly">Weekly</option><option value="semimonthly">Twice a month</option></select></div>'+
       '<div><label class="label" for="in-n">Next one lands</label><input id="in-n" type="date" value="'+iso(today())+'"></div>'+
       '<div><label class="label" for="in-2">Other payday, if twice a month</label><input id="in-2" type="number" min="1" max="31" placeholder="e.g. 15"></div>'+
+      '<div><label class="label" for="in-t">Goes into</label><select id="in-t">'+
+        '<option value="joint">The joint pot</option><option value="own">Their own account</option>'+
+      '</select></div>'+
       '<button class="btn" data-act="addinc">Add income</button>'+
     '</div>'+
     '<div class="note" style="margin-top:10px">Paid twice a month? Give both days. '+
@@ -1098,7 +1121,7 @@ document.addEventListener("click",function(ev){
   }
   else if(a==="addbill"){
     if(!val("bl-n")) return;
-    S.bills.push({id:uid(),name:val("bl-n"),amount:num("bl-a"),day:Math.min(28,Math.max(1,num("bl-d")||1)),
+    S.bills.push({id:uid(),name:val("bl-n"),amount:num("bl-a"),day:Math.min(31,Math.max(1,num("bl-d")||1)),
                   pot:val("bl-p"),split:val("bl-s"),pct:num("bl-p2"),owedBy:val("bl-o2"),paidBy:""});
     render();
   }
@@ -1106,11 +1129,19 @@ document.addEventListener("click",function(ev){
   else if(a==="paid"){
     var who=t.dataset.who||"a";
     var nm="";
-    S.bills.forEach(function(b){ if(b.id===id){ b.paidBy=who; b.paidPeriod=period(today()); nm=b.name; } });
+    S.bills.forEach(function(b){
+      if(b.id!==id || billPaidFor(b,today())) return;
+      b.paidBy=who; b.paidPeriod=period(today()); nm=b.name;
+      if(S.balances[b.pot]!=null) S.balances[b.pot]-=(+b.amount||0);   /* the money has actually gone */
+    });
     render(); toast(nameOf(who)+" paid "+nm);
   }
   else if(a==="unpaid"){
-    S.bills.forEach(function(b){ if(b.id===id){ b.paidBy=""; b.paidPeriod=""; } });
+    S.bills.forEach(function(b){
+      if(b.id!==id || !billPaidFor(b,today())) return;
+      if(S.balances[b.pot]!=null) S.balances[b.pot]+=(+b.amount||0);   /* put it back */
+      b.paidBy=""; b.paidPeriod="";
+    });
     render();
   }
   else if(a==="split"){ S.settings.split=t.dataset.v; render(); }
@@ -1150,7 +1181,8 @@ document.addEventListener("click",function(ev){
   else if(a==="addinc"){
     if(!num("in-a")) return;
     S.income.push({id:uid(),owner:val("in-o"),label:val("in-l")||"Income",amount:num("in-a"),
-                   cycle:val("in-c"),next:val("in-n")||iso(today()),day2:num("in-2")||0});
+                   cycle:val("in-c"),next:val("in-n")||iso(today()),day2:num("in-2")||0,
+                   to:val("in-t")||"joint"});
     render();
   }
   else if(a==="delinc"){ S.income=S.income.filter(function(s){ return s.id!==id; }); render(); }
@@ -1175,7 +1207,11 @@ document.addEventListener("change",function(ev){
     var f=ev.target.files[0]; if(!f) return;
     var r=new FileReader();
     r.onload=function(){
-      try{ S=Object.assign(blank(),JSON.parse(r.result)); render(); }
+      try{
+        var o=JSON.parse(r.result);
+        if(!isTandemCopy(o)) throw new Error("not a Tandem copy");
+        S=Object.assign(blank(),o); render();
+      }
       catch(e){ alert("That file isn't a Tandem copy. Look for one named tandem-<date>.json."); }
     };
     r.readAsText(f);
